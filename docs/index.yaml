@@ -3,7 +3,7 @@ entries:
   cardano:
   - apiVersion: v2
     appVersion: 1.30.1
-    created: "2022-01-06T11:39:06.4918241+01:00"
+    created: "2022-01-06T11:40:57.211148+01:00"
     dependencies:
     - name: common
       repository: https://charts.bitnami.com/bitnami
@@ -12,10 +12,10 @@ entries:
       repository: https://charts.bitnami.com/bitnami
       version: 14.3.3
     description: A Cardano Helm chart for Kubernetes
-    digest: 53091187fde6a21d7d2bab9491b07a5360edace2feb214970cffd6009f46a31d
+    digest: ac0050ba820c8ee953593018a370113e2c0c96bea13f89832923c5b64ada1cae
     name: cardano
     type: application
     urls:
     - cardano-0.1.3.tgz
     version: 0.1.3
-generated: "2022-01-06T11:39:06.4848354+01:00"
+generated: "2022-01-06T11:40:57.202159+01:00"
