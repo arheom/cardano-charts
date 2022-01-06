@@ -4,15 +4,15 @@ kind: ConfigMap
 metadata:
   name: {{ template "cardano.configName" . }}-mainnet
 data:
-  {{ (tpl (.Files.Get "files/readiness.sh") . ) | indent 2 }}
-  {{ (tpl (.Files.Get "files/p2p.sh") . ) | indent 2 }}
-  {{ (tpl (.Files.Get "files/mainnet/producer-topology.json") . ) | indent 2 }}
-  {{ (tpl (.Files.Get "files/mainnet/relay-topology.json") . ) | indent 2 }}
-  {{ (tpl (.Files.Get "files/mainnet/config.json") . ) | indent 2 }}
+{{ (tpl (.Files.Get "files/readiness.sh") . ) | indent 2 }}
+{{ (tpl (.Files.Get "files/p2p.sh") . ) | indent 2 }}
+{{ (tpl (.Files.Get "files/mainnet/producer-topology.json") . ) | indent 2 }}
+{{ (tpl (.Files.Get "files/mainnet/relay-topology.json") . ) | indent 2 }}
+{{ (tpl (.Files.Get "files/mainnet/config.json") . ) | indent 2 }}
 binaryData:
-  {{- $root := . }}
-  {{- $location := "files/mainnet/*.json.gz" }}
-  {{- range $path, $bytes := .Files.Glob $location }}
-    {{ base $path }}: {{ $root.Files.Get $path | b64enc | quote }}
-  {{- end }}
+{{- $root := . }}
+{{- $location := "files/mainnet/*.json.gz" }}
+{{- range $path, $bytes := .Files.Glob $location }}
+  {{ base $path }}: {{ $root.Files.Get $path | b64enc | quote }}
+{{- end }}
 {{- end }}
