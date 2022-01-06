@@ -1,4 +1,4 @@
-{{- if eq .Values.environment.name "testnet" }}
+{{- if eq (default .Values.environment.name "mainnet") "testnet" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
