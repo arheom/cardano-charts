@@ -1,6 +1,6 @@
-{{- $fullName := include "cardano.fullname" . -}}
-{{- $p2pHost := printf "%s-p2p-nginx.%s" $fullName .Release.Namespace -}}
----
+{{- $fullName := include "cardano.fullname" . }}
+{{- $p2pHost := printf "%s-p2p-nginx.%s" $fullName .Release.Namespace }}
+# ---
 listen-addr: ":8080"
 {{- if not .Values.p2p.debug }}
 debug: false
