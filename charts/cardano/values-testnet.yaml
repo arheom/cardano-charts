@@ -90,9 +90,9 @@ existingSecret: '{{ .Release.Name }}-auth'
 
 secrets:
   # -- Redis PubSub service username 
-  redisUsername: ""
+  redisUsername: "redis"
   # -- Redis PubSub service password 
-  redisPassword: ""
+  redisPassword: "zx8pzHELvzXbg4cijb77JAs6"
 
 vault:
   csi:
