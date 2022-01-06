@@ -1,8 +1,8 @@
-{{- if .Values.p2p.enabled }}
+{{- if .Values.p2p.enabled}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "cardano.configName" . }}-p2p
+  name: {{template "cardano.configName" .}}-p2p
 data:
-{{ (tpl (.Files.Get "files/p2p.yaml") . ) | indent 2 }}
-{{- end }}
+{{ (tpl(.Files.Get "files/p2p.yaml") .) | indent 2}}
+{{- end}}
