@@ -23,7 +23,7 @@ redis:
     persistence:
       enabled: false
   auth:
-    username: ""
+    username: "redis"
     existingPasswordSecret: '{{ .Release.Name }}-auth'
 
 image:
