@@ -1,7 +1,6 @@
 {{- $fullName := include "cardano.fullname" . }}
 {{- $namespace := .Release.Namespace }}
 {{- $replicaCount := .Values.relay.replicaCount | int }}
-
 {
   "Producers": [
 {{- range $index, $value := until $replicaCount }}

@@ -1,0 +1,64 @@
+---
+# Source: cardano/templates/admin-deployment.yaml
+# The 'admin' pod is detached from the vnet using k8s network policies.
+# Use the 'Calico' plugin when creating the Kubernetes cluster
+# To enforce this design, the pod will be Terminated if it has access to the net
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "RELEASE-NAME-cardano-admin"
+  labels:
+    app.kubernetes.io/component: admin
+    helm.sh/chart: cardano-0.1.3
+    app.kubernetes.io/name: cardano
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "1.30.1"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: admin
+      app.kubernetes.io/name: cardano
+      app.kubernetes.io/instance: RELEASE-NAME
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: "12789"
+        prometheus.io/scrape: "true"
+      labels:
+        app.kubernetes.io/component: admin
+        app.kubernetes.io/name: cardano
+        app.kubernetes.io/instance: RELEASE-NAME
+    spec:
+      serviceAccountName: RELEASE-NAME-cardano
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: admin
+          securityContext:
+            runAsUser: 65532
+          image: "inputoutput/cardano-node:1.33.0"
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: "10m"
+              memory: "64Mi"
+          command: ["/bin/sh", "-c"]
+          args:
+            - 'trap : TERM INT ;
+              (while true; do timeout 10 bash -c "cat < /dev/null > /dev/tcp/8.8.8.8/53" && exit 1; done) & wait'
+          volumeMounts:
+            - name: vault-cold
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+      volumes:
+        - name: vault-cold
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: RELEASE-NAME-cardano-spc-cold
+            nodePublishSecretRef:                       # Only required when using service principal mode
+              name: secrets-store-creds                 # Only required when using service principal mode. The name of the Kubernetes secret that contains the service principal credentials to access keyvault.

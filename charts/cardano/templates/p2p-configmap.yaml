@@ -4,5 +4,6 @@ kind: ConfigMap
 metadata:
   name: {{ template "cardano.configName" . }}-p2p
 data:
-  p2p.yaml: {{ (tpl (.Files.Get "files/p2p.yaml") . ) | indent 2 }}
+  p2p.yaml: |
+{{ (tpl (.Files.Get "files/p2p.yaml") . ) | indent 4 }}
 {{- end }}

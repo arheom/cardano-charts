@@ -1,0 +1,272 @@
+---
+# Source: cardano/templates/relay-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "RELEASE-NAME-cardano-relay"
+  labels:
+    app.kubernetes.io/component: relay
+    helm.sh/chart: cardano-0.1.3
+    app.kubernetes.io/name: cardano
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "1.30.1"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+spec:
+  serviceName: RELEASE-NAME-cardano-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: relay
+      app.kubernetes.io/name: cardano
+      app.kubernetes.io/instance: RELEASE-NAME
+  template:
+    metadata:
+      annotations:
+        checksum/testnet: 307b3a64965d2b5c79ec73eaf72154d8ddae59fe965a2ad42c906d41245d6cb5
+        prometheus.io/port: "12789"
+        prometheus.io/scrape: "true"
+      labels:
+        app.kubernetes.io/component: relay
+        RELEASE-NAME-redis-client: "true"
+        app.kubernetes.io/name: cardano
+        app.kubernetes.io/instance: RELEASE-NAME
+    spec:
+      serviceAccountName: RELEASE-NAME-cardano
+      securityContext:
+        fsGroup: 1001
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: cardano
+                    app.kubernetes.io/instance: RELEASE-NAME
+                    app.kubernetes.io/component: relay
+                namespaces:
+                  - "ixp"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      terminationGracePeriodSeconds: 30
+
+      initContainers:
+        - name: genesis
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          image: "busybox:1.30.1"
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - cp /config/*-genesis.json.gz /genesis ;
+              gunzip /genesis/*.gz ;
+              cp /config/config.json /genesis ;
+              cp /config/relay-topology.json /genesis/topology.json ;
+          volumeMounts:
+            - name: genesis
+              mountPath: /genesis
+            - name: config
+              mountPath: /config
+              readOnly: true
+
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"  # if there are any dots in a name, the name will be tried first as an absolute name before any search list elements are appended to it.
+      containers:
+        - name: topology-updater
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          image: "regel/cardano-p2p:v0.0.14"
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: "10m"
+              memory: "64Mi"
+          command: ["/bin/sh", "-c"]
+          args:
+            - /cardano-p2p
+              subscribe
+              -a RELEASE-NAME-redis-master.ixp:6379
+              -t p2p
+              -o /tmp/topology.new
+          env:
+          - name: "P2P_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-auth
+                key: redis-password
+          volumeMounts:
+            - name: genesis
+              mountPath: /tmp  # mounted in /tmp to prevent error: rename /tmp/tempfile558080208 /config/topology.json: invalid cross-device link
+        - name: p2p
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          image: "regel/cardano-p2p:v0.0.14"
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: "400m"
+              memory: "2048Mi"
+          command: ["/bin/sh", "-c"]
+          args:
+            - 'trap : TERM INT ;
+              bash /opt/p2p.sh ;
+              (while true; do sleep 1000; done) & wait'  # container status will be 'Running' not 'Completed'
+          volumeMounts:
+            - name: node-ipc
+              mountPath: /ipc
+            - name: p2p
+              mountPath: /p2p
+            - name: p2p-init
+              mountPath: /opt/p2p.sh
+              subPath: p2p.sh
+          readinessProbe:
+            initialDelaySeconds: 600
+            periodSeconds: 10
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 10
+            exec:
+              command: ["stat", "/p2p/pools.json"]
+          env:
+          - name: "CARDANO_NODE_SOCKET_PATH"
+            value: /ipc/node.socket
+
+        - name: p2p-nginx
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          image: nginxinc/nginx-unprivileged
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+          ports:
+            - name: p2p
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: p2p
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+          readinessProbe:
+            initialDelaySeconds: 600
+            periodSeconds: 10
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 10
+            httpGet:
+              path: /pools.json
+              port: 8080
+
+        - name: node
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          image: "inputoutput/cardano-node:1.33.0"
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - mv -f /config/topology.new /config/topology.json || true ;
+              set -e ;
+              $(readlink -e /nix/store/*-cardano-node-exe-*/bin/cardano-node)
+              run
+              --config /config/config.json
+              --topology /config/topology.json
+              --database-path /data/db
+              --host-addr 0.0.0.0
+              --port 3001
+              --socket-path /ipc/node.socket
+          volumeMounts:
+            - name: readiness-probe
+              mountPath: /opt/readiness.sh
+              subPath: readiness.sh
+            - name: node-ipc
+              mountPath: /ipc
+            - name: genesis
+              mountPath: /config
+            - name: data
+              mountPath: /data
+              subPath: 
+          ports:
+            - name: node
+              containerPort: 3001
+              protocol: TCP
+            - name: metrics
+              containerPort: 12789
+              protocol: TCP
+          env:
+          - name: "CARDANO_NODE_SOCKET_PATH"
+            value: /ipc/node.socket
+          startupProbe:
+            tcpSocket:
+              port: 3001
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 6
+            successThreshold: 1
+            failureThreshold: 1440
+          livenessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - /bin/stat /config/topology.new && exit 1 || exit 0
+            initialDelaySeconds: 20
+            periodSeconds: 60
+            timeoutSeconds: 6
+            successThreshold: 1
+            failureThreshold: 5
+          readinessProbe:
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 5
+            exec:
+              command:
+                - sh
+                - -c
+                - bash /opt/readiness.sh
+          resources:
+            limits:
+              cpu: "1"
+              memory: 4096Mi
+            requests:
+              cpu: 100m
+              memory: 512Mi
+
+      volumes:
+        - name: readiness-probe
+          configMap:
+            name: RELEASE-NAME-cardano-configmap-testnet
+        - name: genesis
+          emptyDir: {}
+        - name: node-ipc
+          emptyDir: {}
+        - name: p2p-init
+          configMap:
+            name: RELEASE-NAME-cardano-configmap-testnet
+        - name: p2p
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: RELEASE-NAME-cardano-configmap-testnet
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"

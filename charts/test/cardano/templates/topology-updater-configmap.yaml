@@ -1,0 +1,17 @@
+---
+# Source: cardano/templates/topology-updater-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: RELEASE-NAME-cardano-configmap-topology-updater
+data:
+  cardanoNodePort: "3001"
+  networkMagic: "1097911063"
+  ipVersion: "4"
+  maxPeers: "10"  # Maximum number of peers to return on successful fetch (note that a single peer may include valency of up to 3)
+# *Additional* custom peers to (IP,port[,valency]) to add to your target topology.json
+# eg: "10.0.0.1,3001|10.0.0.2,3002|relays.mydomain.com,3003,3"
+  customPeers: "RELEASE-NAME-cardano-producer-0.RELEASE-NAME-cardano-headless.ixp.svc.cluster.local,3001,1"
+  ekgHost: "RELEASE-NAME-cardano-relay-0.RELEASE-NAME-cardano-headless.ixp.svc.cluster.local"
+  ekgPort: "12789"
+  ekgTimeout: "5"

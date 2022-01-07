@@ -1,7 +1,6 @@
 {{- $fullName := include "cardano.fullname" . }}
 {{- $namespace := .Release.Namespace }}
 {{- $replicaCount := .Values.producer.replicaCount | int }}
-
 {
   "Producers": [
     {
