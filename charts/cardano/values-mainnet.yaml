@@ -104,8 +104,6 @@ vault:
     # -- Name of the Azure Key Vault that contains hot keys.
     # Vault secrets (kesSkey, vrfSkey, nodeCert) are mounted read-only in cardano-producer pod.
     hotVaultName: "" 
-    # -- ClientId of the addon-created managed identity
-    userAssignedIdentityID: "" 
     # -- Tenant ID containing the Azure Key Vault instance
     tenantId: ""
 

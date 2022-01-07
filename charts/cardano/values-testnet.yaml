@@ -23,7 +23,7 @@ redis:
     persistence:
       enabled: false
   auth:
-    username: ""
+    username: "redis"
     existingPasswordSecret: '{{ .Release.Name }}-auth'
 
 image:
@@ -100,14 +100,12 @@ vault:
     enabled: true
     # -- Name of the Azure Key Vault that contains cold keys.
     # Vault secrets are mounted read-only in the admin pod.
-    coldVaultName: "" 
+    coldVaultName: "cardanosparkcvaulttest" 
     # -- Name of the Azure Key Vault that contains hot keys.
     # Vault secrets (kesSkey, vrfSkey, nodeCert) are mounted read-only in cardano-producer pod.
-    hotVaultName: "" 
-    # -- ClientId of the addon-created managed identity
-    userAssignedIdentityID: "" 
+    hotVaultName: "cardanosparkvaulttest" 
     # -- Tenant ID containing the Azure Key Vault instance
-    tenantId: ""
+    tenantId: "e3c1e83d-2801-4ac8-9fc4-0f74fcf0f6af"
 
 
 metrics:

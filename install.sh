@@ -109,7 +109,6 @@ helm upgrade --install "$RELEASE" \
   --set vault.csi.enabled=true \
   --set vault.csi.coldVaultName="$VAULT_NAME" \
   --set vault.csi.hotVaultName="$VAULT_NAME" \
-  --set vault.csi.userAssignedIdentityID="$MANAGED_IDENTITY" \
   --set vault.csi.tenantId="$TENANT_ID" \
   .
 )
