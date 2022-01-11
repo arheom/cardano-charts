@@ -77,7 +77,7 @@ service:
   annotations:
     # service.annotations."service.beta.kubernetes.io/azure-dns-label-name" -- Hostname to be assigned to the ELB for the service
     # service.beta.kubernetes.io/azure-dns-label-name: stupidchess
-  type: NodePort
+  type: LoadBalancer
   port: 3001
 
 environment:
