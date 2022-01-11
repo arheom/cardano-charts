@@ -77,8 +77,8 @@ service:
   annotations:
     # service.annotations."service.beta.kubernetes.io/azure-dns-label-name" -- Hostname to be assigned to the ELB for the service
     # service.beta.kubernetes.io/azure-dns-label-name: stupidchess
-  type: LoadBalancer
-  port: 6000
+  type: NodePort
+  port: 3001
 
 environment:
   # -- name of the Cardano network to use. Either 'testnet' or 'mainnet'
@@ -440,6 +440,6 @@ persistence:
   # -- Source file to download and uncompress if the PVC is empty
   sourceFile:
     # -- Enable restore of the ledger database
-    enabled: true
+    enabled: false
     # -- Archive of Cardano /data/db at testnet epoch 172
     guid: 13ioPLPad3auIcBZgp5jJeukJcnq9_cTj
